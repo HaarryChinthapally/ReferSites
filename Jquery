@@ -1,0 +1,1150 @@
+function page_init() {
+    try {
+        $('#MasterButtons').removeClass('hide');
+        $('#btnmasterEdit').addClass('hide');
+       
+
+        BindDropDownlist();
+        BindToGrid();
+        ValidateForm();
+        $('#txtempno').blur(function () {
+            forDuplicates();
+            
+        });
+     
+        $('#btnmastersave').on('click', function () {
+           
+            if (!($('#form-EmpDetails')).valid()) {
+                return;
+               }
+            else {
+                saveEmpDetails();
+                 }
+        });
+        $('#btnupdatemster').on('click', function () {
+            if (!($('#form-EmpDetails').valid())) {
+                return;
+            }
+            else {
+                UpdateData();
+            }
+         });
+
+    }
+    catch (e) {
+        alert('error' + e);
+    }
+}
+
+function BindToGrid()
+{
+    try {
+        var myProcessing = showProcessing();
+        $.ajax({
+            type: "POST",
+            contentType: "application/json;charset=utf-8",
+            url: "TrainingTask.aspx/BindData",
+            data: {},
+            dataType: "json",
+            success: function (data) {
+                $(myProcessing).empty();
+                $(myProcessing).remove();
+
+                var AllData = JSON.parse(data.d);
+                var GridBindData = AllData.Table;
+
+                $('#DivEmployeeDetails').html('<table id="dtEmployeeDetails" class="table table-bordered table-hover"></table>');
+                var oTable = $('#dtEmployeeDetails').dataTable({
+                    data: GridBindData,
+                    columns: [
+                                    { data: '' },
+                                    { data: '' },
+                                    { data: 'EmployeeNo' },
+                                    { data: 'EmployeeName' },
+                                    { data: 'Address' },
+                                    { data: 'City' },
+                                    { data: 'State' },
+                                    { data: 'Gender' },
+                                    { data: 'Department' }
+                    ],
+                    "bPaginate": true,
+                    "bSort": false,
+                    "bFilter": true,
+                    "lengthMenu": [10, 20, 40, 50, 100],
+                    "bLengthChange": true,
+                    "bInfo": true,
+                    "sScrollX": "100%",
+                    "sScrollXInner": "100%",
+                    "dom": "<'row'<'col-xs-3'l><'col-xs-3'i><'col-xs-6'f>r>t<'row'<'col-xs-6'i><'col-sm-6 col-xs-12'p>>",
+                    "fnDrawCallback": function (oSettings) {
+                        $('.ace-scroll').ace_scroll('reset');
+                    },
+
+                    "columnDefs": [
+                   {
+                       "targets": 0,
+                       "title": 'Edit',
+                       "orderable": false,
+                       "width": "2%",
+                       "render": function (data, type, row) {
+                           var returnVal = '';
+                           returnVal = '<button type="button" class="btn btn-white btn-sm" onclick="EditData(\'' + row.EmployeeNo + ',' + row.EmployeeName + ',' + row.Address + ',' + row.City + ',' + row.State + ',' + row.Gender + ',' + row.Department + '\')"><i class="ace-icon fa fa-pencil bigger-120 green"></i></button>';
+                           return returnVal;
+                       }
+                   },
+                   {
+                       "targets": 1,
+                       "title": 'Delete',
+                       "orderable": false,
+                       "width": '2%',
+                       "render": function (data, type, row) {
+                           var returnVal = '';
+                           returnVal = '<button type="button" class="btn btn-white btn-sm" onclick="DeleteData(\'' + row.EmployeeNo + ',' + row.EmployeeName + ',' + row.Address + ',' + row.City + ',' + row.State + ',' + row.Gender + ',' + row.Department + '\')"><i class="ace-icon fa fa-trash-o bigger-130 red"></i></button>';
+                           return returnVal;
+                       }
+                   },
+                   {
+                       "targets": 2,
+                       "title": 'EmployeeNo',
+                       "orderable": false,
+                       "render": function (data, type, row) {
+                           return row.EmployeeNo;
+                       }
+                   },
+                   {
+                       "targets": 3,
+                       "title": 'EmployeeName',
+                       "orderable": false,
+                       "render": function (data, type, row) {
+                           return row.EmployeeName;
+                       }
+
+                   },
+                {
+                    "targets": 4,
+                    "title": 'Address',
+                    "orderable": false,
+                    "render": function (data, type, row) {
+                        return row.Address;
+                    }
+
+                },
+                {
+                    "targets": 5,
+                    "title": 'City',
+                    "orderable": false,
+                    "render": function (data, type, row) {
+                        return row.City;
+                    }
+
+                },
+                {
+                    "targets": 6,
+                    "title": 'State',
+                    "orderable": false,
+                    "render": function (data, type, row) {
+                        return row.State;
+                    }
+
+                },
+                {
+                    "targets": 7,
+                    "title": 'Gender',
+                    "orderable": false,
+                    "render": function (data, type, row) {
+                        return row.Gender;
+                    }
+
+                },
+                {
+                    "targets": 8,
+                    "title": 'Department',
+                    "orderable": false,
+                    "render": function (data, type, row) {
+                        return row.Department;
+                    }
+
+                }
+                    ]
+                });
+
+
+
+
+                $('#dtEmployeeDetails tbody').on('dblclick', 'tr', function () {
+
+                    try {
+                        var myProcessing = showProcessing();
+                        var table = $('#dtEmployeeDetails').DataTable();
+                        var tr = $(this).closest('tr');
+                        var row = table.row(tr);
+                        var datarow = row.data();
+                        var stringdata = (datarow.EmployeeNo + ',' + datarow.EmployeeName + ',' + datarow.Address + ',' + datarow.City + ',' + datarow.State + ',' + datarow.Gender + ',' + datarow.Department);
+                        EditData(stringdata);
+
+                        $(myProcessing).empty();
+                        $(myProcessing).remove();
+                    } catch (e) {
+                        alert('Error in DoubleClick:' + e);
+
+                    }
+
+                });
+
+            },
+            error: function (result) {
+
+            }
+
+
+
+        });
+    }
+    catch (e) {
+        alert('Error in :BindDataToGrid' + e);
+    }
+}
+
+function BindDropDownlist()
+{
+   
+        try {
+            $.ajax({
+                type:"POST",
+                url: "TrainingTask.aspx/LoadStates",
+                data:"{}",
+                dataType:"json",
+                contentType: "application/json; charset=utf-8",
+                success:function(data)
+                {
+                    var FilterData = [];
+                    var AllData = JSON.parse(data.d);
+                    $("#state").empty();
+                    $("#state").append($("<option></option>").val('').html(''));
+                        FilterData = $.grep(AllData.Table, function (M, P) {
+                            return (M.UniqueID == 10);
+                        });
+                    
+                
+                        $.each(FilterData, function (key, val) {
+                            $("#state").append($("<option></option>").val(val.StateID).html(val.StateName));
+                        });
+
+                  
+                   
+                },
+
+            });
+            
+            } 
+        catch (e) {
+    
+        }
+    }
+
+function ValidateForm() {
+    try {
+       
+        $('#form-EmpDetails').validate({
+            
+            rules:
+                {
+                    txtempno:
+                        {
+                            required: true,
+                           
+                        },
+                    txtempname: {
+                        required: true,
+                        minlength: 8,
+                        maxlength: 12,
+                                },
+                    txtaddr: {
+                        required: true,
+                        minlength: 7,
+                        maxlength: 25,
+                             },
+                    //city: { requied: true },
+                   // state: { required: true },
+                    
+                },
+            messages:
+                {
+                    txtempno: {
+                        required: 'Please enter Employee Number',
+                        remote:'EmployeeNo is Already present ..try another'
+                    },
+                    txtempname: { required: 'Please enter Employee Name' },
+                    txtaddr: { required: 'Please enter Address of Employee ' },
+                    //city: { requied: 'Please select the city' },
+                    //state: { required: 'Please select the state' },
+                    //gender: { required: 'Please check your gender' },
+                    //dept: { required: 'Please select your department' }
+                },
+            highlight: function (e)
+                {
+                    $(e).closest('.form-group').removeClass('has-info').addClass('has-error');
+                },
+            success: function (e)
+                {
+                    $(e).closest('.form-group').removeClass('has-error'); 
+                    $(e).remove();
+                },
+            errorPlacement: function (error, element)
+                {
+                        if (element.is('input[type=checkbox]') || element.is('input[type=radio]')) {
+                            var controls = element.closest('div[class*="col-"]');
+                            if (controls.find(':checkbox,:radio').length > 1) controls.append(error);
+                            else error.insertAfter(element.nextAll('.lbl:eq(0)').eq(0));
+                        }
+                        else if (element.is('.select2')) {
+                            error.insertAfter(element.siblings('[class*="select2-container"]:eq(0)'));
+                        }
+                        else if (element.is('.chosen-select')) {
+                            error.insertAfter(element.siblings('[class*="chosen-container"]:eq(0)'));
+                        }
+                        else error.insertAfter(element.parent());
+                },
+            submitHandler: function (form) {},
+            invalidHandler: function (form) {}
+
+        });
+    }
+    catch (e) {
+
+    }
+}
+
+function forDuplicates() {
+    try {
+        var FilterData=[];
+        $.ajax({
+            type:"POST",
+            url: "TrainingTask.aspx/ForDuplcates",
+            data:"{}",
+            dataType:"json",
+            contentType: "application/json; charset=utf-8",
+            success:function(data)
+            {
+               
+                var Duplicats = [];
+                var EmpAllData = JSON.parse(data.d);
+                FilterData = $.grep(EmpAllData.Table, function (M, P) {
+                    return (M.EmployeeNo == $('#txtempno').val());
+                });
+
+                if (FilterData.length > 0) {
+                    bootboxMessage('Record AllReady Exit.', "OK", "btn-sm btn-primary", function () {
+                        $('#txtempno').val('');
+                    });
+                 
+                } else {
+                   
+                }
+            
+            }
+        });
+
+      
+    
+
+    } catch (e) {
+
+    }
+}
+
+function saveEmpDetails() {
+    try {
+       
+        var myProcessing = showProcessing();
+        var city = $('#city :selected').text();
+        var state = $('#state :selected').text();
+        var gender = '';
+                            if ($('#male').is(':checked')) {
+                                gender = 'Male';
+                            } else {
+                                gender = 'Female';
+                            }
+                             var dept = '';
+                             if ($('#hr').is(':checked')) {
+                                dept = 'HR';
+                            }
+                             else if ($('#manager').is(':checked')) {
+                            dept = "Manager";
+                            }
+                            else {
+                                dept = 'CEO';
+                            }
+
+                            $.ajax({
+                                type: "POST",
+                                contentType: "application/json; charset=utf-8",
+                                url: "TrainingTask.aspx/SaveData",
+                                data: "{EmployeeNo:'" + $('#txtempno').val() + "',EmployeeName:'" + $('#txtempname').val() + "',Address:'" + $('#txtaddr').val() + "',City:'" + city + "',State:'" + state + "',Gender:'" + gender + "',Department:'" + dept + "'}",
+                                dataType: "json",
+                                success: function (data) {
+
+                                    if (data.d == 'Success') {
+                                        BindToGrid();
+                                        $(myProcessing).empty();
+                                        $(myProcessing).remove();
+                                        $('input:text').val('');
+                                        //$('#txtempno').val('');
+                                        // $('#txtempname').val('');
+                                        $('#txtaddr').val('');
+                                        $("#city").val($("#city option:first").val());
+                                        $("#state").val($("#state option:first").val());
+                                        $("input:radio").attr("checked", false);
+                                        bootboxMessage('Data Saved successfully.', "OK", "btn-sm btn-primary", function () { });
+                                    }
+                                    else {
+                                        $(myProcessing).empty();
+                                        $(myProcessing).remove();
+                                        bootboxMessage('Data not Saved.', "OK", "btn-sm btn-primary", function () { });
+                                    }
+
+                                }
+                            });
+
+                           
+    }
+    catch(e)
+    {
+        alert('error in saving data' + e);
+    }
+}
+
+function EditData(edata) {
+                try {
+                    var edt = [];
+                    $('#btnmastersave').addClass('hide');
+                    $('#btnmasterEdit').addClass('hide');
+                    $('#btnupdatemster').removeClass('hide');
+
+                    edt = edata.split(',');
+                    $('#txtempno').val(edt[0]);
+                    $('#txtempname').val(edt[1]);
+                    $('#txtaddr').val(edt[2]);
+                    $('#city option:selected').text(edt[3]);
+                    $('#state option:selected').text(edt[4]);
+
+                           if (edt[5] == 'Male')
+                                {
+                                    $("#male").attr("checked", true);
+                                            }
+                                            else{
+                                    $("#female").attr("checked", true);
+                                }
+                           
+                              if (edt[6] == 'HR') {
+                                  $('#hr').attr("checked", true);
+                              }
+                              else if (edt[6] == 'CEO') {
+                                  $('#ceo').attr("checked", true);
+                                }
+                              else {
+                                  $('#manager').attr("checked", true);
+                                }
+                              
+                }
+                catch (e) {
+                      
+                }
+}
+
+function UpdateData() {
+
+    try {
+       
+        var myProcessing = showProcessing();
+        var city = $('#city :selected').text();
+        var state = $('#state :selected').text();
+        var gender = '';
+        if ($('#male').is(':checked')) {
+            gender = 'Male';
+        } else {
+            gender = 'Female';
+        }
+        var dept = '';
+        if ($('#hr').is(':checked')) {
+            dept = 'HR';
+        }
+        else if ($('#manager').is(':checked')) {
+            dept = "Manager";
+        }
+        else {
+            dept = 'CEO';
+        }
+
+        $.ajax({
+            type: "POST",
+            contentType: "application/json; charset=utf-8",
+            url: "TrainingTask.aspx/Updatedata",
+            data: "{EmployeeNo:'" + $('#txtempno').val() + "',EmployeeName:'" + $('#txtempname').val() + "',Address:'" + $('#txtaddr').val() + "',City:'" + city + "',State:'" + state + "',Gender:'" + gender + "',Department:'" + dept + "'}",
+            dataType: "json",
+            success: function (data) {
+
+                if (data.d == 'Success') {
+                    BindToGrid();
+                    $(myProcessing).empty();
+                    $(myProcessing).remove();
+                    $('input:text').val('');
+                    $('#txtaddr').val('');
+                    $("#city option:selected").text('');
+                    $("#state option:selected").text('');
+                    $("input:radio").attr("checked", false);
+                    bootboxMessage('Data Updated successfully.', "OK", "btn-sm btn-primary", function () { });
+                    $('#btnupdatemster').addClass('hide');
+                    $('#btnmastersave').removeClass('hide');
+                    
+
+                }
+                else {
+                    $(myProcessing).empty();
+                    $(myProcessing).remove();
+                    bootboxMessage('Data not Updated.', "OK", "btn-sm btn-primary", function () { });
+                   
+                }
+
+            }
+        });
+
+
+    }
+    catch (e) {
+        alert('error in updatinging data' + e);
+    }
+}
+
+function DeleteData(delData) {
+    try {
+       
+        bootboxConfirmation('Do you want to Delete information?', function () {  //Yes
+            
+            var myProcessing = showProcessing();
+            var deletedata = [];
+            deletedata = delData.split(',');
+            $.ajax({
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                url: "TrainingTask.aspx/DeleteData",
+                data: "{EmployeeNo:'" +deletedata[0] +"'}",
+                dataType: "json",
+               
+                success: function (data) {
+                    $(myProcessing).empty();
+                    $(myProcessing).remove();
+                    if (data.d == 'Success') {
+                        bootboxMessage('Record Deleted successfully.', "OK", "btn-sm btn-primary", function () { });
+                        BindToGrid();
+                    }
+                    else {
+                        $(myProcessing).empty();
+                        $(myProcessing).remove();
+                        bootboxMessage('Record Not Deleted.', "OK", "btn-sm btn-primary", function () { });
+                    }
+
+                },
+            
+            });
+            $('input:text').val('');
+            $('#txtaddr').val('');
+            $("#city").val($("#city option:first").val());
+            $("#state").val($("#state option:first").val());
+            $("input:radio").attr("checked", false);
+        },
+        function () { //No
+
+
+        });
+    }
+            catch (e) {
+                alert('Error Message in DeleteData' + e);
+            }
+}
+
+function UIProcessing(myProcessing) {
+    $(myProcessing).empty();
+    $(myProcessing).remove();
+    setTimeout(page_init(), 0);
+}
+
+$(document).ready(function () {
+    var myProcessing = showProcessing();
+    setTimeout(function () { UIProcessing(myProcessing); }, 0);
+});
+function page_init() {
+    try {
+        $('#MasterButtons').removeClass('hide');
+        $('#btnmasterEdit').addClass('hide');
+       
+
+        BindDropDownlist();
+        BindToGrid();
+        ValidateForm();
+        $('#txtempno').blur(function () {
+            forDuplicates();
+            
+        });
+     
+        $('#btnmastersave').on('click', function () {
+           
+            if (!($('#form-EmpDetails')).valid()) {
+                return;
+               }
+            else {
+                saveEmpDetails();
+                 }
+        });
+        $('#btnupdatemster').on('click', function () {
+            if (!($('#form-EmpDetails').valid())) {
+                return;
+            }
+            else {
+                UpdateData();
+            }
+         });
+
+    }
+    catch (e) {
+        alert('error' + e);
+    }
+}
+
+function BindToGrid()
+{
+    try {
+        var myProcessing = showProcessing();
+        $.ajax({
+            type: "POST",
+            contentType: "application/json;charset=utf-8",
+            url: "TrainingTask.aspx/BindData",
+            data: {},
+            dataType: "json",
+            success: function (data) {
+                $(myProcessing).empty();
+                $(myProcessing).remove();
+
+                var AllData = JSON.parse(data.d);
+                var GridBindData = AllData.Table;
+
+                $('#DivEmployeeDetails').html('<table id="dtEmployeeDetails" class="table table-bordered table-hover"></table>');
+                var oTable = $('#dtEmployeeDetails').dataTable({
+                    data: GridBindData,
+                    columns: [
+                                    { data: '' },
+                                    { data: '' },
+                                    { data: 'EmployeeNo' },
+                                    { data: 'EmployeeName' },
+                                    { data: 'Address' },
+                                    { data: 'City' },
+                                    { data: 'State' },
+                                    { data: 'Gender' },
+                                    { data: 'Department' }
+                    ],
+                    "bPaginate": true,
+                    "bSort": false,
+                    "bFilter": true,
+                    "lengthMenu": [10, 20, 40, 50, 100],
+                    "bLengthChange": true,
+                    "bInfo": true,
+                    "sScrollX": "100%",
+                    "sScrollXInner": "100%",
+                    "dom": "<'row'<'col-xs-3'l><'col-xs-3'i><'col-xs-6'f>r>t<'row'<'col-xs-6'i><'col-sm-6 col-xs-12'p>>",
+                    "fnDrawCallback": function (oSettings) {
+                        $('.ace-scroll').ace_scroll('reset');
+                    },
+
+                    "columnDefs": [
+                   {
+                       "targets": 0,
+                       "title": 'Edit',
+                       "orderable": false,
+                       "width": "2%",
+                       "render": function (data, type, row) {
+                           var returnVal = '';
+                           returnVal = '<button type="button" class="btn btn-white btn-sm" onclick="EditData(\'' + row.EmployeeNo + ',' + row.EmployeeName + ',' + row.Address + ',' + row.City + ',' + row.State + ',' + row.Gender + ',' + row.Department + '\')"><i class="ace-icon fa fa-pencil bigger-120 green"></i></button>';
+                           return returnVal;
+                       }
+                   },
+                   {
+                       "targets": 1,
+                       "title": 'Delete',
+                       "orderable": false,
+                       "width": '2%',
+                       "render": function (data, type, row) {
+                           var returnVal = '';
+                           returnVal = '<button type="button" class="btn btn-white btn-sm" onclick="DeleteData(\'' + row.EmployeeNo + ',' + row.EmployeeName + ',' + row.Address + ',' + row.City + ',' + row.State + ',' + row.Gender + ',' + row.Department + '\')"><i class="ace-icon fa fa-trash-o bigger-130 red"></i></button>';
+                           return returnVal;
+                       }
+                   },
+                   {
+                       "targets": 2,
+                       "title": 'EmployeeNo',
+                       "orderable": false,
+                       "render": function (data, type, row) {
+                           return row.EmployeeNo;
+                       }
+                   },
+                   {
+                       "targets": 3,
+                       "title": 'EmployeeName',
+                       "orderable": false,
+                       "render": function (data, type, row) {
+                           return row.EmployeeName;
+                       }
+
+                   },
+                {
+                    "targets": 4,
+                    "title": 'Address',
+                    "orderable": false,
+                    "render": function (data, type, row) {
+                        return row.Address;
+                    }
+
+                },
+                {
+                    "targets": 5,
+                    "title": 'City',
+                    "orderable": false,
+                    "render": function (data, type, row) {
+                        return row.City;
+                    }
+
+                },
+                {
+                    "targets": 6,
+                    "title": 'State',
+                    "orderable": false,
+                    "render": function (data, type, row) {
+                        return row.State;
+                    }
+
+                },
+                {
+                    "targets": 7,
+                    "title": 'Gender',
+                    "orderable": false,
+                    "render": function (data, type, row) {
+                        return row.Gender;
+                    }
+
+                },
+                {
+                    "targets": 8,
+                    "title": 'Department',
+                    "orderable": false,
+                    "render": function (data, type, row) {
+                        return row.Department;
+                    }
+
+                }
+                    ]
+                });
+
+
+
+
+                $('#dtEmployeeDetails tbody').on('dblclick', 'tr', function () {
+
+                    try {
+                        var myProcessing = showProcessing();
+                        var table = $('#dtEmployeeDetails').DataTable();
+                        var tr = $(this).closest('tr');
+                        var row = table.row(tr);
+                        var datarow = row.data();
+                        var stringdata = (datarow.EmployeeNo + ',' + datarow.EmployeeName + ',' + datarow.Address + ',' + datarow.City + ',' + datarow.State + ',' + datarow.Gender + ',' + datarow.Department);
+                        EditData(stringdata);
+
+                        $(myProcessing).empty();
+                        $(myProcessing).remove();
+                    } catch (e) {
+                        alert('Error in DoubleClick:' + e);
+
+                    }
+
+                });
+
+            },
+            error: function (result) {
+
+            }
+
+
+
+        });
+    }
+    catch (e) {
+        alert('Error in :BindDataToGrid' + e);
+    }
+}
+
+function BindDropDownlist()
+{
+   
+        try {
+            $.ajax({
+                type:"POST",
+                url: "TrainingTask.aspx/LoadStates",
+                data:"{}",
+                dataType:"json",
+                contentType: "application/json; charset=utf-8",
+                success:function(data)
+                {
+                    var FilterData = [];
+                    var AllData = JSON.parse(data.d);
+                    $("#state").empty();
+                    $("#state").append($("<option></option>").val('').html(''));
+                        FilterData = $.grep(AllData.Table, function (M, P) {
+                            return (M.UniqueID == 10);
+                        });
+                    
+                
+                        $.each(FilterData, function (key, val) {
+                            $("#state").append($("<option></option>").val(val.StateID).html(val.StateName));
+                        });
+
+                  
+                   
+                },
+
+            });
+            
+            } 
+        catch (e) {
+    
+        }
+    }
+
+function ValidateForm() {
+    try {
+       
+        $('#form-EmpDetails').validate({
+            
+            rules:
+                {
+                    txtempno:
+                        {
+                            required: true,
+                           
+                        },
+                    txtempname: {
+                        required: true,
+                        minlength: 8,
+                        maxlength: 12,
+                                },
+                    txtaddr: {
+                        required: true,
+                        minlength: 7,
+                        maxlength: 25,
+                             },
+                    //city: { requied: true },
+                   // state: { required: true },
+                    
+                },
+            messages:
+                {
+                    txtempno: {
+                        required: 'Please enter Employee Number',
+                        remote:'EmployeeNo is Already present ..try another'
+                    },
+                    txtempname: { required: 'Please enter Employee Name' },
+                    txtaddr: { required: 'Please enter Address of Employee ' },
+                    //city: { requied: 'Please select the city' },
+                    //state: { required: 'Please select the state' },
+                    //gender: { required: 'Please check your gender' },
+                    //dept: { required: 'Please select your department' }
+                },
+            highlight: function (e)
+                {
+                    $(e).closest('.form-group').removeClass('has-info').addClass('has-error');
+                },
+            success: function (e)
+                {
+                    $(e).closest('.form-group').removeClass('has-error'); 
+                    $(e).remove();
+                },
+            errorPlacement: function (error, element)
+                {
+                        if (element.is('input[type=checkbox]') || element.is('input[type=radio]')) {
+                            var controls = element.closest('div[class*="col-"]');
+                            if (controls.find(':checkbox,:radio').length > 1) controls.append(error);
+                            else error.insertAfter(element.nextAll('.lbl:eq(0)').eq(0));
+                        }
+                        else if (element.is('.select2')) {
+                            error.insertAfter(element.siblings('[class*="select2-container"]:eq(0)'));
+                        }
+                        else if (element.is('.chosen-select')) {
+                            error.insertAfter(element.siblings('[class*="chosen-container"]:eq(0)'));
+                        }
+                        else error.insertAfter(element.parent());
+                },
+            submitHandler: function (form) {},
+            invalidHandler: function (form) {}
+
+        });
+    }
+    catch (e) {
+
+    }
+}
+
+function forDuplicates() {
+    try {
+        var FilterData=[];
+        $.ajax({
+            type:"POST",
+            url: "TrainingTask.aspx/ForDuplcates",
+            data:"{}",
+            dataType:"json",
+            contentType: "application/json; charset=utf-8",
+            success:function(data)
+            {
+               
+                var Duplicats = [];
+                var EmpAllData = JSON.parse(data.d);
+                FilterData = $.grep(EmpAllData.Table, function (M, P) {
+                    return (M.EmployeeNo == $('#txtempno').val());
+                });
+
+                if (FilterData.length > 0) {
+                    bootboxMessage('Record AllReady Exit.', "OK", "btn-sm btn-primary", function () {
+                        $('#txtempno').val('');
+                    });
+                 
+                } else {
+                   
+                }
+            
+            }
+        });
+
+      
+    
+
+    } catch (e) {
+
+    }
+}
+
+function saveEmpDetails() {
+    try {
+       
+        var myProcessing = showProcessing();
+        var city = $('#city :selected').text();
+        var state = $('#state :selected').text();
+        var gender = '';
+                            if ($('#male').is(':checked')) {
+                                gender = 'Male';
+                            } else {
+                                gender = 'Female';
+                            }
+                             var dept = '';
+                             if ($('#hr').is(':checked')) {
+                                dept = 'HR';
+                            }
+                             else if ($('#manager').is(':checked')) {
+                            dept = "Manager";
+                            }
+                            else {
+                                dept = 'CEO';
+                            }
+
+                            $.ajax({
+                                type: "POST",
+                                contentType: "application/json; charset=utf-8",
+                                url: "TrainingTask.aspx/SaveData",
+                                data: "{EmployeeNo:'" + $('#txtempno').val() + "',EmployeeName:'" + $('#txtempname').val() + "',Address:'" + $('#txtaddr').val() + "',City:'" + city + "',State:'" + state + "',Gender:'" + gender + "',Department:'" + dept + "'}",
+                                dataType: "json",
+                                success: function (data) {
+
+                                    if (data.d == 'Success') {
+                                        BindToGrid();
+                                        $(myProcessing).empty();
+                                        $(myProcessing).remove();
+                                        $('input:text').val('');
+                                        //$('#txtempno').val('');
+                                        // $('#txtempname').val('');
+                                        $('#txtaddr').val('');
+                                        $("#city").val($("#city option:first").val());
+                                        $("#state").val($("#state option:first").val());
+                                        $("input:radio").attr("checked", false);
+                                        bootboxMessage('Data Saved successfully.', "OK", "btn-sm btn-primary", function () { });
+                                    }
+                                    else {
+                                        $(myProcessing).empty();
+                                        $(myProcessing).remove();
+                                        bootboxMessage('Data not Saved.', "OK", "btn-sm btn-primary", function () { });
+                                    }
+
+                                }
+                            });
+
+                           
+    }
+    catch(e)
+    {
+        alert('error in saving data' + e);
+    }
+}
+
+function EditData(edata) {
+                try {
+                    var edt = [];
+                    $('#btnmastersave').addClass('hide');
+                    $('#btnmasterEdit').addClass('hide');
+                    $('#btnupdatemster').removeClass('hide');
+
+                    edt = edata.split(',');
+                    $('#txtempno').val(edt[0]);
+                    $('#txtempname').val(edt[1]);
+                    $('#txtaddr').val(edt[2]);
+                    $('#city option:selected').text(edt[3]);
+                    $('#state option:selected').text(edt[4]);
+
+                           if (edt[5] == 'Male')
+                                {
+                                    $("#male").attr("checked", true);
+                                            }
+                                            else{
+                                    $("#female").attr("checked", true);
+                                }
+                           
+                              if (edt[6] == 'HR') {
+                                  $('#hr').attr("checked", true);
+                              }
+                              else if (edt[6] == 'CEO') {
+                                  $('#ceo').attr("checked", true);
+                                }
+                              else {
+                                  $('#manager').attr("checked", true);
+                                }
+                              
+                }
+                catch (e) {
+                      
+                }
+}
+
+function UpdateData() {
+
+    try {
+       
+        var myProcessing = showProcessing();
+        var city = $('#city :selected').text();
+        var state = $('#state :selected').text();
+        var gender = '';
+        if ($('#male').is(':checked')) {
+            gender = 'Male';
+        } else {
+            gender = 'Female';
+        }
+        var dept = '';
+        if ($('#hr').is(':checked')) {
+            dept = 'HR';
+        }
+        else if ($('#manager').is(':checked')) {
+            dept = "Manager";
+        }
+        else {
+            dept = 'CEO';
+        }
+
+        $.ajax({
+            type: "POST",
+            contentType: "application/json; charset=utf-8",
+            url: "TrainingTask.aspx/Updatedata",
+            data: "{EmployeeNo:'" + $('#txtempno').val() + "',EmployeeName:'" + $('#txtempname').val() + "',Address:'" + $('#txtaddr').val() + "',City:'" + city + "',State:'" + state + "',Gender:'" + gender + "',Department:'" + dept + "'}",
+            dataType: "json",
+            success: function (data) {
+
+                if (data.d == 'Success') {
+                    BindToGrid();
+                    $(myProcessing).empty();
+                    $(myProcessing).remove();
+                    $('input:text').val('');
+                    $('#txtaddr').val('');
+                    $("#city option:selected").text('');
+                    $("#state option:selected").text('');
+                    $("input:radio").attr("checked", false);
+                    bootboxMessage('Data Updated successfully.', "OK", "btn-sm btn-primary", function () { });
+                    $('#btnupdatemster').addClass('hide');
+                    $('#btnmastersave').removeClass('hide');
+                    
+
+                }
+                else {
+                    $(myProcessing).empty();
+                    $(myProcessing).remove();
+                    bootboxMessage('Data not Updated.', "OK", "btn-sm btn-primary", function () { });
+                   
+                }
+
+            }
+        });
+
+
+    }
+    catch (e) {
+        alert('error in updatinging data' + e);
+    }
+}
+
+function DeleteData(delData) {
+    try {
+       
+        bootboxConfirmation('Do you want to Delete information?', function () {  //Yes
+            
+            var myProcessing = showProcessing();
+            var deletedata = [];
+            deletedata = delData.split(',');
+            $.ajax({
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                url: "TrainingTask.aspx/DeleteData",
+                data: "{EmployeeNo:'" +deletedata[0] +"'}",
+                dataType: "json",
+               
+                success: function (data) {
+                    $(myProcessing).empty();
+                    $(myProcessing).remove();
+                    if (data.d == 'Success') {
+                        bootboxMessage('Record Deleted successfully.', "OK", "btn-sm btn-primary", function () { });
+                        BindToGrid();
+                    }
+                    else {
+                        $(myProcessing).empty();
+                        $(myProcessing).remove();
+                        bootboxMessage('Record Not Deleted.', "OK", "btn-sm btn-primary", function () { });
+                    }
+
+                },
+            
+            });
+            $('input:text').val('');
+            $('#txtaddr').val('');
+            $("#city").val($("#city option:first").val());
+            $("#state").val($("#state option:first").val());
+            $("input:radio").attr("checked", false);
+        },
+        function () { //No
+
+
+        });
+    }
+            catch (e) {
+                alert('Error Message in DeleteData' + e);
+            }
+}
+
+function UIProcessing(myProcessing) {
+    $(myProcessing).empty();
+    $(myProcessing).remove();
+    setTimeout(page_init(), 0);
+}
+
+$(document).ready(function () {
+    var myProcessing = showProcessing();
+    setTimeout(function () { UIProcessing(myProcessing); }, 0);
+});
